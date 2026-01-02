@@ -1,6 +1,6 @@
 # Configuration et Installation de YASH Shell
 
-Ce dépôt contient les fichiers de configuration pour le shell **Yash (Yet Another Shell)**, adaptés pour un environnement utilisant **Void Linux** (via `xbps`) ou **Alpine Linux** (avec adaptations présentes dans le profil).
+Ce dépôt contient les fichiers de configuration pour le shell **Yash (Yet Another Shell)**, adaptés pour un environnement **Alpine Linux** (avec adaptations présentes dans le profil).
 
 ---
 
