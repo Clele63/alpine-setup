@@ -1,0 +1,103 @@
+$include /etc/inputrc
+
+set keymap vi
+set editing-mode vi
+set keyseq-timeout 200
+
+# menu completions
+set completion-ignore-case on
+set show-all-if-ambiguous on
+set menu-complete-display-prefix on
+set colored-stats on
+TAB: menu-complete
+"\e[Z": menu-complete-backward
+Control-n: menu-complete
+Control-p: menu-complete-backward
+
+# other stuff
+set bind-tty-special-chars fof
+set page-completions off
+set completion-query-items 200
+set colored-completion-prefix on
+set revert-all-at-newline on
+
+$if mode=vi
+	set keymap vi-command
+	# Don't search history with <Ctrl-s>
+	\C-u: nop
+	# Don't open $EDITOR on rlwrap command line with <Ctrl-^>
+	\C-^^: nop
+	# Open $EDITOR on rlwrap command line with <Ctrl-x><Ctrl-e>
+	"daw": "lbdW"
+	"yaw": "lbyW"
+	"caw": "lbcW"
+	"diw": "lbdw"
+	"yiw": "lbyw"
+	"ciw": "lbcw"
+	"da\"": "lF\"df\""
+	"di\"": "lF\"lmtf\"d`t"
+	"ci\"": "di\"i"
+	"ca\"": "da\"i"
+	"da'": "lF'df'"
+	"di'": "lF'lmtf'd`t"
+	"ci'": "di'i"
+	"ca'": "da'i"
+	"da`": "lF\`df\`"
+	"di`": "lF\`lmtf\`d`t"
+	"ci`": "di`i"
+	"ca`": "da`i"
+	"da(": "lF(df)"
+	"di(": "lF(lmtf)d`t"
+	"ci(": "di(i"
+	"ca(": "da(i"
+	"da)": "lF(df)"
+	"di)": "lF(lmtf)d`t"
+	"ci)": "di(i"
+	"ca)": "da(i"
+	"da{": "lF{df}"
+	"di{": "lF{lmtf}d`t"
+	"ci{": "di{i"
+	"ca{": "da{i"
+	"da}": "lF{df}"
+	"di}": "lF{lmtf}d`t"
+	"ci}": "di}i"
+	"ca}": "da}i"
+	"da[": "lF[df]"
+	"di[": "lF[lmtf]d`t"
+	"ci[": "di[i"
+	"ca[": "da[i"
+	"da]": "lF[df]"
+	"di]": "lF[lmtf]d`t"
+	"ci]": "di]i"
+	"ca]": "da]i"
+	"da<": "lF<df>"
+	"di<": "lF<lmtf>d`t"
+	"ci<": "di<i"
+	"ca<": "da<i"
+	"da>": "lF<df>"
+	"di>": "lF<lmtf>d`t"
+	"ci>": "di>i"
+	"ca>": "da>i"
+	"da/": "lF/df/"
+	"di/": "lF/lmtf/d`t"
+	"ci/": "di/i"
+	"ca/": "da/i"
+	"da:": "lF:df:"
+	"di:": "lF:lmtf:d`t"
+	"ci:": "di:i"
+	"ca:": "da:i"
+	?: reverse-search-history
+	/: forward-search-history
+	set keymap vi-insert
+	# Don't search history with <Ctrl-s>
+	Control-s: nop
+	# Don't open $EDITOR on rlwrap command line with <Ctrl-^>
+	Control-^: nop
+
+	# control-l in vi mode
+	Control-l: clear-screen
+
+	set show-mode-in-prompt on
+	set vi-ins-mode-string " "
+	set vi-cmd-mode-string ":"
+$endif

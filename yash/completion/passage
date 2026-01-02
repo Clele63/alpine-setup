@@ -1,0 +1,184 @@
+# (C) 2023 yosh, Victorien Elvinger
+
+# Completion script for the "passage" command.
+
+function completion/passage {
+	OPTIONS=( #>#
+		"c:: --clip::; copy the password to the clipboard"
+		"--help; show help"
+		"q:: --qrcode::; encode the password in a QR Code"
+		"--version; show version"
+	) #<#
+	command -f completion//parseoptions -n
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	('')
+		if [ ${WORDS[#]} -eq 1 ]; then
+			command -f completion/passage::completecmd
+			command -f completion/passage::passwords
+		else
+			typeset passagecmd="${WORDS[2]}"
+			command -f completion//parseoptions
+			command -f completion//getoperands
+			if command -vf "completion/passage::$passagecmd:arg" >/dev/null 2>&1; then
+				command -f "completion/passage::$passagecmd:arg"
+			elif [ ${WORDS[#]} -eq 0 ]; then
+				command -f completion/passage::passwords
+			fi
+		fi
+		;;
+	esac
+}
+
+function completion/passage::completecmd { #>#
+    complete -P "$PREFIX" -D "copy a password" cp
+    complete -P "$PREFIX" -D "edit a password" edit
+    complete -P "$PREFIX" -D "list passwords matching a name" find
+    complete -P "$PREFIX" -D "generate a password" generate
+    complete -P "$PREFIX" -D "git commands inside the password store" git
+    complete -P "$PREFIX" -D "grep inside passwords" grep
+    complete -P "$PREFIX" -D "show help" help
+    # complete -P "$PREFIX" -D "initialize  new  password store" init
+    complete -P "$PREFIX" -D "insert a new password" insert
+    complete -P "$PREFIX" -D "list passwords" list ls
+    complete -P "$PREFIX" -D "move a password" mv
+    complete -P "$PREFIX" -D "remove a password" rm
+    complete -P "$PREFIX" -D "show a password" show
+    complete -P "$PREFIX" -D "show version" version
+	#<#
+}
+
+function completion/passage::cp:arg {
+	OPTIONS=( #>#
+		"f --force; don't prompt when overriding a password"
+	) #<#
+
+	command -f completion//parseoptions
+	case $ARGOPT in
+		(-)
+			command -f completion//completeoptions
+			;;
+		('')
+			command -f completion//getoperands
+			if [ ${WORDS[#]} -lt 2 ]; then
+				command -f completion/passage::passwords
+				command -f completion/passage::subfolders
+			fi
+			;;
+	esac	
+}
+
+function completion/passage::git:arg {
+	# delegate to git completion
+	command -f completion//reexecute
+}
+
+function completion/passage::grep:arg {
+	# delegate to grep completion
+	command -f completion//reexecute
+}
+
+function completion/pass::insert:arg {
+	OPTIONS=( #>#
+		"e --echo; don't print entered characters"
+		"f --force; override if a password with the same name exists"
+		"m --multiline; add several lines in the password file"
+	) #<#
+
+	command -f completion//parseoptions
+	case $ARGOPT in
+		(-)
+			command -f completion//completeoptions
+			;;
+		('')
+			command -f completion//getoperands
+			if [ ${WORDS[#]} -eq 0 ]; then
+				command -f completion//passage::passwords
+			fi
+			;;
+	esac
+}
+
+function completion/passage::ls:arg {
+	if [ ${WORDS[#]} -eq 1 ]; then
+		command -f completion/passage::subfolders
+	fi
+}
+
+function completion/passage::mv:arg {
+	# same completion as `passage cp`
+	command -f completion/passage::cp:arg
+}
+
+function completion/passage::show:arg {
+	OPTIONS=( #>#
+		"c:: --clip::; copy the password to clipboard"
+		"q:: --qrcode::; encode the password in a QR Code"
+	) #<#
+
+	command -f completion//parseoptions
+	case $ARGOPT in
+		(-)
+			command -f completion//completeoptions
+			;;
+		('')
+			command -f completion//getoperands
+			if [ ${WORDS[#]} -eq 0 ]; then
+				command -f completion/passage::passwords
+			fi
+			;;
+	esac
+}
+
+function completion/passage::rm:arg {
+	OPTIONS=( #>#
+		"f --force; don't prompt before removing"
+		"r --recursive; remove passwords recursively if it is a directory"
+	) #<#
+
+	command -f completion//parseoptions
+	case $ARGOPT in
+		(-)
+			command -f completion//completeoptions
+			;;
+		('')
+			# find first non-option argument parse options that modify completion behavior
+			typeset OPTIND=2 isrec=0
+			while [ $OPTIND -le ${WORDS[#]} ]; do
+				case ${WORDS[OPTIND]} in
+					(-r|--recursive)
+						isrec=1
+						;;
+					(-?*)
+						;;
+					(*)
+						break
+						;;
+				esac
+				OPTIND=$((OPTIND+1))
+			done
+
+			if [ $OPTIND -gt ${WORDS[#]} ]; then
+				if [ $isrec -eq 1 ]; then
+					command -f completion/passage::subfolders
+				else
+					command -f completion/passage::passwords
+				fi
+			fi
+			;;
+	esac
+}
+
+function completion/passage::passwords {
+	typeset passdir="${PASSAGE_DIR:-"$HOME/.passage/store"}" IFS='
+'
+	complete -P "$PREFIX" -- $(find -L -- "$passdir" -name '.git' -prune -o -name '*.age' -type f 2>/dev/null | sed -E -e "s#^${passdir}/?##" -e 's#\.age$##' -e 's#\\#\\\\#g' -e 's#:#\\:#g')
+}
+
+function completion/passage::subfolders {
+	typeset passdir="${PASSAGE_DIR:-"$HOME/.passage/store"}" IFS='
+'
+	complete -P "$PREFIX" -- $(find -L -- "$passdir" -name '.git' -prune -o -type d 2>/dev/null | sed -E -e "s#^${passdir}/?##" -e 's#\.age$##' -e 's#\\#\\\\#g' -e 's#:#\\:#g')
+}

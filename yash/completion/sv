@@ -1,0 +1,71 @@
+# (C) 2023 yosh
+
+# Completion script for the "sv" command.
+
+function completion/sv {
+	typeset OPTIONS ARGOPT PREFIX
+	OPTIONS=( #>#
+		"v; wait up to 7 seconds for the command to take effect, then report status or timeout"
+		"w:; override the default timeout with the specified seconds. implies -v"
+	) #<#
+
+	command -f completion//parseoptions
+	case $ARGOPT in
+		(-)
+			command -f completion//completeoptions
+			;;
+		(*)
+			command -f completion//getoperands
+			if [ ${WORDS[#]} -eq 0 ]; then
+				command -f completion/sv::completecmd
+			else
+				case ${WORDS[1]} in
+					(status|up|once|exit|start|restart|force-restart|try-restart)
+						command -f completion/sv::allservices
+						;;
+					(*)
+						command -f completion/sv::activeservices
+						;;
+				esac
+			fi
+	esac
+}
+
+function completion/sv::completecmd {
+	complete -P "$PREFIX" -D "start a service" up
+	complete -P "$PREFIX" -D "stop a service" down
+	complete -P "$PREFIX" -D "start a service, do not restart if it stops" once
+	complete -P "$PREFIX" -D "send STOP to a service" pause
+	complete -P "$PREFIX" -D "send CONT to a service" cont
+	complete -P "$PREFIX" -D "send HUP to a service" hup
+	complete -P "$PREFIX" -D "send ALRM to a service" alarm
+	complete -P "$PREFIX" -D "send INT to a service" int
+	complete -P "$PREFIX" -D "send QUIT to a service" quit
+	complete -P "$PREFIX" -D "send USR1 to a service" 1
+	complete -P "$PREFIX" -D "send USR2 to a service" 2
+	complete -P "$PREFIX" -D "send TERM to a service" term
+	complete -P "$PREFIX" -D "send KILL to a service" kill
+	complete -P "$PREFIX" -D "send TERM to a service if up, exit runsv if service is down" exit
+	complete -P "$PREFIX" -D "stop a service and wait for the service to become down" stop
+	complete -P "$PREFIX" -D "send HUP to a service and report status" reload
+	complete -P "$PREFIX" -D "restart a service" restart
+	complete -P "$PREFIX" -D "same as exit, but wait for the runsv process to terminate" shutdown
+	complete -P "$PREFIX" -D "force stop a service" force-stop
+	complete -P "$PREFIX" -D "force reload a service" force-reload
+	complete -P "$PREFIX" -D "force restart a service" force-restart
+	complete -P "$PREFIX" -D "force shutdown a service" force-shutdown
+	complete -P "$PREFIX" -D "restart a service, don't run check" try-restart
+	complete -P "$PREFIX" -D "check the state of a service" check
+}
+
+function completion/sv::activeservices {
+	typeset SVDIR="${SVDIR:-/var/service}" IFS='
+'
+	complete -P "$PREFIX" -- $(printf '%s\n' "$SVDIR"/* | sed -E "s#$SVDIR/?##")
+}
+
+function completion/sv::allservices {
+	typeset IFS='
+'
+	complete -P "$PREFIX" -- $(printf '%s\n' /etc/sv/* | sed "s#/etc/sv/##")
+}

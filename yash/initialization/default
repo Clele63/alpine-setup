@@ -1,0 +1,75 @@
+# aliases
+# man() { vim -R -c 'filetype plugin on' -c 'set ft=man' -c "Man $*"; }
+chtsh() { IFS='+' curl cht.sh/"$*" ; }
+
+if command -v sv >/dev/null 2>&1; then
+    alias rc='doas sv'
+    alias usv="SVDIR=${HOME}/.local/service sv"
+else
+    alias rc='doas rc-service'
+fi
+
+alias view='vim -R'
+
+if command -v lsd >/dev/null 2>&1; then
+    alias ls='lsd'
+else.
+    alias ls='ls --color=auto'
+fi
+
+alias xdt='xdotool'
+alias tearfree='xrandr --output HDMI-A-0 --set TearFree'
+alias ts="trans"
+alias ed="ed -p '* '"
+alias diff='diff --color=auto -u 2>/dev/null || diff -u'
+alias dotfiles='git --git-dir=$HOME/.local/dotfiles --work-tree=$HOME'
+
+# XDG aliases
+alias startx='startx "$XDG_CONFIG_HOME/X11/xinitrc"'
+
+# Prompt and nnn
+_c=("\[[30m\]" "\[[31m\]" "\[[32m\]" "\[[33m\]" "\[[34m\]" "\[[35m\]" "\[[36m\]" "\[[37m\]" "\[[90m\]" "\[[91m\]" "\[[92m\]" "\[[93m\]" "\[[94m\]" "\[[95m\]" "\[[96m\]" "\[[97m\]" "\[[0m\]")
+
+if [ "${NNNLVL:-0}" -ge 1 ]; then
+    alias nnn="echo don\'t nest nnn!"
+    export nnnsel="${XDG_CONFIG_HOME:-$HOME/.config}/nnn/.selection"
+    _prompt_flags="${_prompt_flags:-} ${_c[10]}nnn"
+fi
+
+YASH_PS1="${_c[16]}[${_c[14]}"'$USER'"${_c[16]}@${_c[11]}"'$(uname -n)'"${_c[16]}]${_prompt_flags:-}${_c[16]} ${_c[9]}*${_c[16]} ${_c[7]}"'${PWD/#~/\~}'"
+     ${_c[10]}└─────${_c[17]} "
+YASH_PS1S=''
+YASH_PS1P='\fkt.'
+PS1='[$USER@$(uname -n)] /${PWD##*/} $ '
+PS1S="$YASH_PS1S"
+PS1P="$YASH_PS1P"
+
+unset _c
+unset _prompt_flags
+
+set -o emacs
+set +o vi
+
+set -o le-predict
+set -o le-no-conv-meta
+set -o notify-le
+set -o no-unset
+set -o brace-expand
+
+# ensure job control works as expected
+case $- in (*m*)
+  trap - TSTP TTIN TTOU
+esac
+
+# keybinds {{{
+# adding functionality {{{
+bindkey -e '\^[[1;5C' forward-emacsword    # Ctrl + Droite
+bindkey -e '\^[[1;5D' backward-emacsword   # Ctrl + Gauche
+bindkey -e '\^[[H'    beginning-of-line    # Home
+bindkey -e '\^[[F'    end-of-line          # End
+bindkey -e '\^[[3~'   delete-char          # Suppr
+bindkey -e '\^L'      clear-and-redraw-all # Ctrl+L
+# }}}
+# }}}
+
+# vim: ft=sh

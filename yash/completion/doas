@@ -1,0 +1,29 @@
+# Completion script for the "doas" command.
+
+function completion/doas {
+	typeset OPTIONS ARGOPT
+	OPTIONS=( #>#
+		"C:; specify a config file to parse"
+		"L; clear any persisted authentications, then exit"
+		"n; non-interactive mode, fail if rule doesn't have nopass"
+		"s; execute the shell from \$SHELL or /etc/passwd"
+		"u:; specify the user to execute the command as"
+	) #<#
+
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	(C)
+		complete -f
+		;;
+	(u)
+		complete -u
+		;;
+	(*)
+		command -f completion//getoperands
+		command -f completion//reexecute
+		;;
+	esac
+}

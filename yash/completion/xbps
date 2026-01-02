@@ -1,0 +1,346 @@
+# (C) 2023 yosh
+
+# Completion script for the xbps suite.
+
+function completion/xbps::parse_help {
+	typeset IFS line word copt lopt
+
+	while IFS="" read -r line; do
+		# line must start with a blank
+		[[ "$line" == [[:blank:]]* ]] || continue
+
+		if [[ "$line" =~ ^[[:blank:]]{1,5}"-" ]]; then
+			[[ -n "${copt:-}" ]] && printf '%s\n' "$copt" && copt=""
+			IFS=" 	=,"
+			set -f
+			set -- $line
+			set +f
+			# if $1 is a short option, remove leading dash and shift. trim line.
+			[[ "$1" == "-"[a-zA-Z0-9] ]] && copt="${1#-}" && shift
+			# test if long option, will add space if short option exists. trim line.
+			[[ "$1" =~ ^"--"[a-zA-Z-]+$ ]] && copt="${copt:+$copt }$1" && line="${line#*$1}" && shift
+			# test opt args
+			if [[ "$1" == "<"*">" ]]; then copt="${copt/ /: }:" && shift
+			elif [[ "$1" == "["*"]" ]]; then copt="${copt/ /:: }::" && shift
+			elif [[ "$1" =~ ^[][,.A-Z]{2,}$ ]]; then copt="${copt/ /: }:" && shift; fi
+			# trim *anything* before the first instance of 2 spaces or ending chars
+			# this catches xbps-query's --cat=FILE PKG option and xbps-query --property
+			# also trim everything before first tab
+			line="${line#*[] 	] }"
+			line="${line#*	}"
+			# trim leading and trailing whitespace
+			line="${line#"${line%%[![:blank:]]*}"}"
+			line="${line%"${line##*[![:blank:]]}"}"
+			copt="$copt;${line:+ $line}"
+		elif [[ "$line" =~ ^[[:blank:]]{5,} ]]; then
+			# this only triggers if it starts with > 5 blanks but there's no --,
+			# which means it can only be an extension of a prev cmd description
+			# or a footer note, which can be detected by number of spaces
+			line="$(IFS=" "; printf ' %s' $line)"
+			[[ "$copt" == *";" ]] && line=" ${line# }"
+			[[ "$line" == " "[A-Z]* ]] && [[ "$copt" != *";" ]] && [[ "$copt" != *"." ]] && line=".$line"
+			copt="${copt% }$line"
+		fi
+	done <( "$1" --help 2>&1 )
+	printf '%s\n' "$copt"
+}
+
+function completion/xbps::installed_packages {
+	xbps-query -s "$1*" | sed 's/^... \([^ ]*\)-[^-]* .*/\1/'
+}
+
+function completion/xbps::all_packages {
+	xbps-query -Rs "$1*" | sed 's/^... \([^ ]*\)-[^-]* .*/\1/'
+}
+
+function completion/xbps::set_options {
+	typeset IFS='
+'
+	OPTIONS=( $(command -f completion/xbps::parse_help "$1") )
+}
+
+function completion/xbps::query_words {
+	for word in "${WORDS[@]}"; do
+		for arg in "$@"; do
+			[[ "$word" == "$arg" ]] && return 0
+		done
+	done
+	return 1
+}
+
+function completion/xbps-alternatives {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-alternatives
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([Cc]|--config|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(g|--group)
+		complete -P "$PREFIX" $(xbps-alternatives -l | grep -v '^ ')
+		;;
+	(*)
+		complete $(command -f completion/xbps::installed_packages "$TARGETWORD")
+		;;
+	esac
+}
+
+function completion/xbps-checkvers {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-checkvers
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([CDr]|--config|--distdir|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(*)
+		complete -f
+	esac
+}
+
+function completion/xbps-create {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-create
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	(*)
+		complete -d
+		;;
+	esac
+}
+
+function completion/xbps-dgraph {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-dgraph
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([Cr]|--config|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(c|--graph-config)
+		complete -P "$PREFIX" -f
+		;;
+	(*)
+		complete $(command -f completion/xbps::all_packages)
+		;;
+	esac
+}
+
+function completion/xbps-digest {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-digest
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	(*)
+		complete -f
+		;;
+	esac
+}
+
+function completion/xbps-fetch {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-fetch
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	(o)
+		complete -P "$PREFIX" -f
+		;;
+	(*)
+		;;
+	esac
+}
+
+function completion/xbps-install {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-install
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([Ccr]|--config|--cachedir|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(*)
+		complete $(command -f completion/xbps::all_packages "$TARGETWORD")
+		;;
+	esac
+}
+
+function completion/xbps-pkgdb {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-pkgdb
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([Cr]|--config|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(m|--mode)
+		complete -P "$PREFIX" -D "mark PKGNAME as if it was installed automatically" auto
+		complete -P "$PREFIX" -D "mark PKGNAME as if it was installed manually" manual
+		complete -P "$PREFIX" -D "hold PKGNAME. Held packages are not updated" hold
+		complete -P "$PREFIX" -D "unhold PKGNAME" unhold
+		complete -P "$PREFIX" -D "make PKGNAME only accept updates from the same repo used for installation" repolock
+		complete -P "$PREFIX" -D "allow PKGNAME to accept updates from any repo" repounlock
+		;;
+	(*)
+		complete $(command -f completion/xbps::installed_packages "$TARGETWORD")
+		;;
+	esac
+}
+
+function completion/xbps-query {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-query
+	command -f completion//parseoptions -e
+	case $ARGOPT in
+		("-")
+			command -f completion//completeoptions
+			;;
+		([Ccr]|--config|--cachedir|--rootdir)
+			complete -P "$PREFIX" -d
+			;;
+		(p|--property)
+			if [ -n "$PREFIX" ]; then
+				complete -P "$PREFIX" ""
+			else
+				PREFIX="${TARGETWORD%"${TARGETWORD##*,}"}"
+				complete -T -S ',' -P "$PREFIX" -D 'group and file alternatives provided by the package.' alternatives
+				complete -T -S ',' -P "$PREFIX" -D 'target architecture the package was build for.' architecture
+				complete -T -S ',' -P "$PREFIX" -D 'returns "yes" if the package was installed automatically.' automatic-install
+				complete -T -S ',' -P "$PREFIX" -D 'enabled options the package was built with.' build-options
+				complete -T -S ',' -P "$PREFIX" -D 'changelog URL for the package.' changelog
+				complete -T -S ',' -P "$PREFIX" -D 'configuration file(s) installed by the package.' conf_files
+				complete -T -S ',' -P "$PREFIX" -D 'other packages this package conflicts with.' conflicts
+				complete -T -S ',' -P "$PREFIX" -D 'hash of the package file.' filename-sha256
+				complete -T -S ',' -P "$PREFIX" -D 'size of the package file.' filename-size
+				complete -T -S ',' -P "$PREFIX" -D 'returns "yes" if the package is held and will not be updated.' hold
+				complete -T -S ',' -P "$PREFIX" -D 'home URL of the package project.' homepage
+				complete -T -S ',' -P "$PREFIX" -D 'date when the package was installed.' install-date
+				complete -T -S ',' -P "$PREFIX" -D 'post-install message provided by the package.' install-msg
+				complete -T -S ',' -P "$PREFIX" -D 'script used for installing the package.' install-script
+				complete -T -S ',' -P "$PREFIX" -D 'total size of files installed by the package.' installed_size
+				complete -T -S ',' -P "$PREFIX" -D 'license(s) for distributing the package.' license
+				complete -T -S ',' -P "$PREFIX" -D 'contact of the maintainer of the package.' maintainer
+				complete -T -S ',' -P "$PREFIX" -D 'hash of the plist package files metadata.' metafile-sha256
+				complete -T -S ',' -P "$PREFIX" -D 'name of the package.' pkgname
+				complete -T -S ',' -P "$PREFIX" -D 'version of the package.' pkgver
+				complete -T -S ',' -P "$PREFIX" -D 'returns "yes" if the package will not be removed automatically on update.' preserve
+				complete -T -S ',' -P "$PREFIX" -D 'abstract facility provided by the package.' provides
+				complete -T -S ',' -P "$PREFIX" -D 'post-remove message provided by the package.' remove-msg
+				complete -T -S ',' -P "$PREFIX" -D 'script used for removing the package.' remove-script
+				complete -T -S ',' -P "$PREFIX" -D 'other packages that the package replaces.' replaces
+				complete -T -S ',' -P "$PREFIX" -D 'returns "yes" if the package only accepts updates from original repository.' repolock
+				complete -T -S ',' -P "$PREFIX" -D 'repository where the package was installed from.' repository
+				complete -T -S ',' -P "$PREFIX" -D 'previous provided version this package replaces.' reverts
+				complete -T -S ',' -P "$PREFIX" -D 'other runtime dependency packages for the package.' run_depends
+				complete -T -S ',' -P "$PREFIX" -D 'shared libraries provided by the package.' shlib-provides
+				complete -T -S ',' -P "$PREFIX" -D 'shared libraries required by the package.' shlib-requires
+				complete -T -S ',' -P "$PREFIX" -D 'short description of the package.' short_desc
+				complete -T -S ',' -P "$PREFIX" -D 'commit hash of package last change from the void-packages repository.' source-revisions
+				complete -T -S ',' -P "$PREFIX" -D 'installation state of the package.' state
+				complete -T -S ',' -P "$PREFIX" -D 'list of categories the package is associated with.' tags
+			fi
+			;;
+		(o|--cat)
+			complete -P "$PREFIX" -f
+			;;
+		(*)
+			if command -f completion/xbps::query_words "-R" "--repository"; then complete $(command -f completion/xbps::all_packages "$TARGETWORD")
+			else complete $(command -f completion/xbps::installed_packages "$TARGETWORD"); fi
+			;;
+	esac
+}
+
+function completion/xbps-reconfigure {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-reconfigure
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([Cr]|--config|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(*)
+		complete $(command -f completion/xbps::installed_packages "$TARGETWORD")
+		;;
+	esac
+}
+
+function completion/xbps-remove {
+	typeset OPTIONS ARGOPT PREFIX
+	
+	command -f completion/xbps::set_options xbps-remove
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([Ccr]|--config|--cachedir|--rootdir)
+		complete -P "$PREFIX" -d
+		;;
+	(*)
+		complete $(command -f completion/xbps::installed_packages "$TARGETWORD")
+		;;
+	esac
+}
+
+function completion/xbps-rindex {
+	typeset OPTIONS ARGOPT PREFIX
+
+	command -f completion/xbps::set_options xbps-rindex
+	command -f completion//parseoptions
+	case $ARGOPT in
+	(-)
+		command -f completion//completeoptions
+		;;
+	([crs]|--clean|--remove-obsoletes|--sign)
+		complete -P "$PREFIX" -d
+		;;
+	([aS]|--add|--sign-pkg)
+		complete -P "$PREFIX" -A '*.xbps' -df
+		;;
+	(--compression)
+		complete -P "$PREFIX" none gzip bzip2 lz4 xz zstd
+		;;
+	(*)
+		complete -f
+		;;
+	esac
+}
+
+# the rest will be created when xbps updates to 0.60, since that update will
+# have more consistent --help naming schemes.
