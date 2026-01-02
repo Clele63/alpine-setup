@@ -1,0 +1,10 @@
+if [ -f /usr/share/yash/initialization/common ]; then
+    . /usr/share/yash/initialization/common
+fi
+
+if [ -f /usr/share/yash/initialization/default ]; then
+    . /usr/share/yash/initialization/default
+fi
+
+set +o vi
+set -o emacs

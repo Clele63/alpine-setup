@@ -152,4 +152,8 @@ export NNN_PLUG="$_nc;$_nm"
 
 # }}}
 
+case $- in
+    *i*) [ -f "$HOME/.yashrc" ] && . "$HOME/.yashrc" ;;
+esac
+
 # vim: ft=sh

@@ -17,7 +17,7 @@ doas apk add vim git curl doas man-pages lsd fzf bfs nnn translate-shell gnupg r
 ```
 
 ```bash
-doas apk add yash
+doas apk add yash yash-completion
 ```
 
 ---
