@@ -10,6 +10,12 @@ Avant de copier les configurations, assurez-vous que `yash` est installé sur vo
 
 ### Alpine Linux
 
+Pré-requis :
+
+```bash
+doas apk add vim git curl doas man-pages lsd fzf bfs nnn translate-shell gnupg rxvt-unicode runit
+```
+
 ```bash
 doas apk add yash
 ```
